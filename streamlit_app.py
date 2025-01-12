@@ -8,6 +8,7 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 import openai
 from datetime import datetime, timedelta
+import hashlib
 
 # Google Calendar API settings
 SCOPES = ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/userinfo.profile']
@@ -35,7 +36,13 @@ def save_credentials(creds, username):
     with open(token_file, 'w') as token:
         token.write(creds.to_json())
 
-def authenticate(username):
+def authenticate(username, password):
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()
+    # Dummy password verification (replace this with actual password verification logic)
+    if hashed_password != 'EXPECTED_HASHED_PASSWORD':
+        st.sidebar.error("Invalid username or password.")
+        return None, None
+
     creds = load_credentials(username)
 
     if creds and creds.valid:
@@ -143,7 +150,7 @@ def generate_response(user_input, kullanici_adi, messages):
     if not user_input:
         return "No user input provided."
 
-    content = f"Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirsin. kullanıcının adı {kullanici_adi}"
+    content = f"Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirisn. Kullanıcı adı {kullanici_adi}"]
     prompt = f"{content}\n\n{user_input}"
 
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -164,8 +171,9 @@ def main():
     with st.sidebar:
         st.header("Kullanıcı Girişi")
         username = st.text_input("Lütfen kullanıcı adınızı girin:")
-        if username:
-            creds, kullanici_adi = authenticate(username)
+        password = st.text_input("Lütfen şifrenizi girin:", type="password")
+        if username and password:
+            creds, kullanici_adi = authenticate(username, password)
             st.session_state.kullanici_adi = kullanici_adi  # Store the Google user name in session state
         else:
             creds, kullanici_adi = None, None

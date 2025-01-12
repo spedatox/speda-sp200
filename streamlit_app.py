@@ -59,7 +59,7 @@ def authenticate(username):
         st.sidebar.info("The app will log in automatically after authorization.")
 
         # Check the URL parameters when the OAuth flow is completed
-        if st.experimental_get_query_params().get('code'):
+        if 'code' in st.experimental_get_query_params():
             query_params = st.experimental_get_query_params()
             try:
                 flow.fetch_token(code=query_params['code'][0])
@@ -71,7 +71,7 @@ def authenticate(username):
                 return creds
             except Exception as e:
                 st.sidebar.error(f"Error during authorization: {e}")
-        elif st.experimental_get_query_params().get('error'):
+        elif 'error' in st.experimental_get_query_params():
             st.sidebar.error(f"Error during authorization: {st.experimental_get_query_params()['error'][0]}")
     return None
 
@@ -82,7 +82,7 @@ def get_google_user_name(creds):
     service = build('oauth2', 'v2', credentials=creds)
     user_info = service.userinfo().get().execute()
     return user_info['name']
-
+    
 def get_calendar_service(creds):
     service = build('calendar', 'v3', credentials=creds)
     return service

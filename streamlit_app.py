@@ -198,15 +198,19 @@ def main():
 
     if 'messages' not in st.session_state:
         st.session_state.messages = []
+        print("Initialized session state messages")
 
     if 'creds' not in st.session_state:
         st.session_state.creds = None
+        print("Initialized session state creds")
 
     if 'kullanici_adi' not in st.session_state:
         st.session_state.kullanici_adi = None
+        print("Initialized session state kullanici_adi")
 
     if 'show_form' not in st.session_state:
         st.session_state.show_form = False
+        print("Initialized session state show_form")
 
     with st.sidebar:
         st.header("Kullanıcı Girişi")
@@ -217,26 +221,30 @@ def main():
                 creds, kullanici_adi = authenticate(username, password)
                 st.session_state.creds = creds
                 st.session_state.kullanici_adi = kullanici_adi
+                print(f"Authenticated user: {kullanici_adi}")
 
     creds = st.session_state.creds
     kullanici_adi = st.session_state.kullanici_adi
 
     if creds:
         service = get_calendar_service(creds)
+        print("Obtained Google Calendar service")
 
-        # Listelemede kullanılacak takvimleri seçmek için bir seçim kutusu ekleyin
         calendar_list = get_calendar_list(creds)
         calendar_ids = {calendar['summary']: calendar['id'] for calendar in calendar_list}
         selected_calendar = st.sidebar.selectbox("Takvim Seçin:", list(calendar_ids.keys()))
+        print(f"Selected calendar: {selected_calendar}")
 
         if selected_calendar:
             selected_calendar_id = calendar_ids[selected_calendar]
         else:
             selected_calendar_id = 'primary'
+            print("Defaulting to primary calendar")
 
         user_input = st.chat_input("Ne yapmak istiyorsunuz?")
         if user_input:
             st.session_state.messages.append({"role": "user", "content": user_input})
+            print(f"User input: {user_input}")
 
             if "liste" in user_input.lower():
                 try:
@@ -246,13 +254,15 @@ def main():
                     else:
                         response = summarize_events(events)
                         st.session_state.messages.append({"role": "assistant", "content": "### Mevcut Etkinlikler\n" + response})
+                    print("Listed events")
                 except Exception as e:
                     st.error(f"Etkinlikler listelenirken bir hata oluştu: {e}")
+                    print(f"Error listing events: {e}")
             elif "ekle" in user_input.lower():
                 st.session_state.messages.append({"role": "assistant", "content": "Lütfen etkinlik bilgilerini girin:"})
                 st.session_state.show_form = True
+                print("Prompting user to enter event details")
 
-        # Mesajları chat mesaj balonu içinde görüntüle
         for message in st.session_state.messages:
             if message["role"] == "user":
                 with st.chat_message("user"):
@@ -260,7 +270,6 @@ def main():
             else:
                 with st.chat_message("assistant"):
                     st.write(message['content'])
-                    # Etkinlik formunu burada görüntüleyin
                     if st.session_state.show_form and message["content"] == "Lütfen etkinlik bilgilerini girin:":
                         with st.form("add_event_form_from_prompt", clear_on_submit=False):
                             summary = st.text_input("Etkinlik Başlığı:")
@@ -279,9 +288,11 @@ def main():
                                         end_datetime = datetime.combine(end_date, end_time).isoformat()
                                         event = add_event(service, selected_calendar_id, summary, start_datetime, end_datetime)
                                         st.session_state.messages.append({"role": "assistant", "content": f"Etkinlik başarıyla eklendi: [Etkinliğe Git]({event.get('htmlLink')})"})
-                                        st.session_state.show_form = False  # Formu kapat
+                                        st.session_state.show_form = False
+                                        print("Event added successfully")
                                 except Exception as e:
                                     st.error(f"Etkinlik eklenirken bir hata oluştu: {e}")
+                                    print(f"Error adding event: {e}")
 
 if __name__ == '__main__':
     main()

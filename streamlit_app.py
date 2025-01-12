@@ -111,17 +111,22 @@ def get_google_user_name(creds):
     service = build('oauth2', 'v2', credentials=creds)
     user_info = service.userinfo().get().execute()
     return user_info['name']
-    
+
+def get_calendar_list(creds):
+    service = build('calendar', 'v3', credentials=creds)
+    calendar_list = service.calendarList().list().execute()
+    return calendar_list.get('items', [])
+
 def get_calendar_service(creds):
     service = build('calendar', 'v3', credentials=creds)
     return service
 
-def list_events(service):
+def list_events(service, calendar_id):
     now = datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
     one_week_ago = (datetime.utcnow() - timedelta(days=7)).isoformat() + 'Z'
     one_month_later = (datetime.utcnow() + timedelta(days=30)).isoformat() + 'Z'
     events_result = service.events().list(
-        calendarId='primary',
+        calendarId=calendar_id,
         timeMin=one_week_ago,
         timeMax=one_month_later,
         maxResults=50,
@@ -131,7 +136,7 @@ def list_events(service):
     events = events_result.get('items', [])
     return events
 
-def add_event(service, summary, start_time, end_time):
+def add_event(service, calendar_id, summary, start_time, end_time):
     event = {
         'summary': summary,
         'start': {
@@ -143,7 +148,7 @@ def add_event(service, summary, start_time, end_time):
             'timeZone': 'Europe/Istanbul',
         },
     }
-    event = service.events().insert(calendarId='primary', body=event).execute()
+    event = service.events().insert(calendarId=calendar_id, body=event).execute()
     return event
 
 def summarize_events(events):
@@ -172,7 +177,7 @@ def generate_response(user_input, kullanici_adi, messages):
     if not user_input:
         return "No user input provided."
 
-    content = f"Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirsin. Kullanıcının adı:{kullanici_adi}"
+    content = f"Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi"
     prompt = f"{content}\n\n{user_input}"
 
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -200,9 +205,18 @@ def main():
         else:
             creds, kullanici_adi = None, None
 
-    
     if creds:
         service = get_calendar_service(creds)
+
+        # Listelemede kullanılacak takvimleri seçmek için bir seçim kutusu ekleyin
+        calendar_list = get_calendar_list(creds)
+        calendar_ids = {calendar['summary']: calendar['id'] for calendar in calendar_list}
+        selected_calendar = st.sidebar.selectbox("Takvim Seçin:", list(calendar_ids.keys()))
+
+        if selected_calendar:
+            selected_calendar_id = calendar_ids[selected_calendar]
+        else:
+            selected_calendar_id = 'primary'
 
         user_input = st.chat_input("Ne yapmak istiyorsunuz?")
         if user_input:
@@ -210,7 +224,7 @@ def main():
 
             if "liste" in user_input.lower():
                 try:
-                    events = list_events(service)
+                    events = list_events(service, selected_calendar_id)
                     if not events:
                         with st.chat_message("assistant"):
                             st.write("Yakın zamanda hiçbir etkinlik bulunamadı.")
@@ -236,7 +250,7 @@ def main():
                             else:
                                 start_datetime = datetime.combine(start_date, start_time).isoformat()
                                 end_datetime = datetime.combine(end_date, end_time).isoformat()
-                                event = add_event(service, summary, start_datetime, end_datetime)
+                                event = add_event(service, selected_calendar_id, summary, start_datetime, end_datetime)
                                 st.session_state.messages.append({"role": "assistant", "content": f"Etkinlik başarıyla eklendi: [Etkinliğe Git]({event.get('htmlLink')})"})
                         except Exception as e:
                             st.error(f"Etkinlik eklenirken bir hata oluştu: {e}")

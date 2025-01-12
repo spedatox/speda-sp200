@@ -156,30 +156,7 @@ def main():
         else:
             creds = None
 
-        st.header("Manuel Etkinlik Ekle")
-        if creds:
-            with st.form("add_event_form"):
-                summary = st.text_input("Etkinlik Başlığı:")
-                start_date = st.date_input("Başlangıç Tarihi")
-                start_time = st.time_input("Başlangıç Saati")
-                end_date = st.date_input("Bitiş Tarihi")
-                end_time = st.time_input("Bitiş Saati")
-                submitted_event = st.form_submit_button("Etkinliği Ekle")
-
-                if submitted_event:
-                    try:
-                        if not summary:
-                            st.error("Etkinlik başlığı boş bırakılamaz.")
-                        else:
-                            start_datetime = datetime.combine(start_date, start_time).isoformat()
-                            end_datetime = datetime.combine(end_date, end_time).isoformat()
-                            event = add_event(service, summary, start_datetime, end_datetime)
-                            st.success(f"Etkinlik başarıyla eklendi: [Etkinliğe Git]({event.get('htmlLink')})")
-                    except Exception as e:
-                        st.error(f"Etkinlik eklenirken bir hata oluştu: {e}")
-        else:
-            st.info("Etkinlik eklemek için lütfen giriş yapın.")
-
+    
     if creds:
         service = get_calendar_service(creds)
 

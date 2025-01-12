@@ -108,7 +108,7 @@ def summarize_events(events):
         f"{event['start'].get('dateTime', event['start'].get('date'))}: {event['summary']}"
         for event in events
     ])
-    prompt = f"Aşağıdaki etkinlikleri ilk önce okunaklı bir liste olarak (Örneğin: 1 Ocak 2000 - (ETKİNLİK ADI)) yazıp daha sonrasında kısa bir şekilde özetle, esprili olabilirsin, {event_descriptions}"
+    prompt = f"Aşağıdaki etkinlikleri ilk önce okunaklı bir liste olarak (Örneğin: 1 Ocak 2000 - (ETKİNLİK ADI)) yazıp daha sonrasında kısa bir şekilde özetle, esprili olabilirsin, {even[...]
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -129,7 +129,7 @@ def generate_response(user_input, user_name):
     if not user_input:
         return "No user input provided."
 
-    content = f"Adın Speda Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirsin"
+    content = f"Adın Speda Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirs[...]
     prompt = f"{content}\n\n{user_input}"
 
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -178,6 +178,8 @@ def main():
                     start_time = st.time_input("Başlangıç Saati")
                     end_date = st.date_input("Bitiş Tarihi")
                     end_time = st.time_input("Bitiş Saati")
+                    st.write(f"Form state: {st.session_state.show_event_form}")
+                    st.write(f"Inputs - Summary: {summary}, Start: {start_date} {start_time}, End: {end_date} {end_time}")
                     if st.button("Etkinliği Ekle"):
                         try:
                             if summary and start_date and start_time and end_date and end_time:

@@ -177,7 +177,7 @@ def generate_response(user_input, kullanici_adi, messages):
     if not user_input:
         return "No user input provided."
 
-    content = f"Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yap"
+    content = f"Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yap[...]"
     prompt = f"{content}\n\n{user_input}"
 
     try:
@@ -191,7 +191,6 @@ def generate_response(user_input, kullanici_adi, messages):
     except Exception as e:
         print(f"Error invoking OpenAI API: {e}")
         return "An error occurred while generating the response."
-
 
 def main():
     st.title("Speda Takvim Asistanı")

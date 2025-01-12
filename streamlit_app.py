@@ -129,14 +129,16 @@ def generate_response(user_input, user_name):
     if not user_input:
         return "No user input provided."
 
-    content = f"Adın Speda Ahmet Erol Bayrak tarafından geliştirilen bir yapay zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse her şeyi yapabilirsin."
+    content = f"Adın Speda Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilir"
     prompt = f"{content}\n\n{user_input}"
 
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
+    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
         messages=[{"role": "system", "content": prompt}]
     )
     return response.choices[0].message.content.strip()
+
 
 def main():
     st.title("Speda Takvim Asistanı")

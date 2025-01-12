@@ -39,15 +39,15 @@ def authenticate(username):
     creds = load_credentials(username)
 
     if creds and creds.valid:
-        user_name = get_google_user_name(creds)  # Function to get the user's name from Google credentials
-        st.sidebar.success(f"Hoşgeldin {user_name}!")
-        return creds
+        kullanici_adi = get_google_user_name(creds)  # Function to get the user's name from Google credentials
+        st.sidebar.success(f"Hoşgeldin {kullanici_adi}!")
+        return creds, kullanici_adi
     elif creds and creds.expired and creds.refresh_token:
         creds.refresh(Request())
         save_credentials(creds, username)
-        user_name = get_google_user_name(creds)
-        st.sidebar.success(f"Hoşgeldin {user_name}!")
-        return creds
+        kullanici_adi = get_google_user_name(creds)
+        st.sidebar.success(f"Hoşgeldin {kullanici_adi}!")
+        return creds, kullanici_adi
     else:
         flow = Flow.from_client_secrets_file(
             CLIENT_SECRETS_FILE,
@@ -65,15 +65,15 @@ def authenticate(username):
                 flow.fetch_token(code=query_params['code'][0])
                 creds = flow.credentials
                 save_credentials(creds, username)
-                user_name = get_google_user_name(creds)
-                st.sidebar.success(f"Hoşgeldin {user_name}!")
+                kullanici_adi = get_google_user_name(creds)
+                st.sidebar.success(f"Hoşgeldin {kullanici_adi}!")
                 st.experimental_set_query_params()  # Clear the query parameters to simulate a rerun
-                return creds
+                return creds, kullanici_adi
             except Exception as e:
                 st.sidebar.error(f"Error during authorization: {e}")
         elif 'error' in st.query_params():
             st.sidebar.error(f"Error during authorization: {st.query_params()['error'][0]}")
-    return None
+    return None, None
 
 def get_google_user_name(creds):
     if not creds or not creds.valid:
@@ -139,11 +139,11 @@ def convert_time_to_iso_format(time_str):
     )
     return response.choices[0].message.content.strip()
 
-def generate_response(user_input, user_name, messages):
+def generate_response(user_input, kullanici_adi, messages):
     if not user_input:
         return "No user input provided."
 
-    content = f"Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirsin Kullanıcının adı {user_name}"
+    content = f"Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirsin kullanıcın adı {kullanici_adi}"
     prompt = f"{content}\n\n{user_input}"
 
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -165,9 +165,10 @@ def main():
         st.header("Kullanıcı Girişi")
         username = st.text_input("Lütfen kullanıcı adınızı girin:")
         if username:
-            creds = authenticate(username)
+            creds, kullanici_adi = authenticate(username)
+            st.session_state.kullanici_adi = kullanici_adi  # Store the Google user name in session state
         else:
-            creds = None
+            creds, kullanici_adi = None, None
 
     
     if creds:
@@ -211,7 +212,7 @@ def main():
                             st.error(f"Etkinlik eklenirken bir hata oluştu: {e}")
             else:
                 messages = [{"role": message["role"], "content": message["content"]} for message in st.session_state.messages]
-                response = generate_response(user_input, username, messages)
+                response = generate_response(user_input, st.session_state.kullanici_adi, messages)
                 st.session_state.messages.append({"role": "assistant", "content": response})
 
     # Mesajları chat mesaj balonu içinde görüntüle

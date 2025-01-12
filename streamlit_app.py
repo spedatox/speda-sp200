@@ -127,7 +127,7 @@ def convert_time_to_iso_format(time_str):
 
 def generate_response(user_input, user_name):
     content = f"Adın Speda Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirsin. Kullanıcının Adı {user_name}."
-    prompt = {user_input}
+    prompt = user_input
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     response = client.chat.completions.create(
         model="gpt-4o-mini",

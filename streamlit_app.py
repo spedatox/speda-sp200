@@ -39,12 +39,14 @@ def authenticate(username):
     creds = load_credentials(username)
 
     if creds and creds.valid:
+        user_name = get_google_user_name(creds)  # Function to get the user's name from Google credentials
         st.sidebar.success(f"Hoşgeldin {user_name}!")
         return creds
     elif creds and creds.expired and creds.refresh_token:
         creds.refresh(Request())
         save_credentials(creds, username)
-        st.sidebar.success(f"Hoşgeldin {username}!")
+        user_name = get_google_user_name(creds)
+        st.sidebar.success(f"Hoşgeldin {user_name}!")
         return creds
     else:
         flow = Flow.from_client_secrets_file(
@@ -63,6 +65,7 @@ def authenticate(username):
                 flow.fetch_token(code=query_params['code'][0])
                 creds = flow.credentials
                 save_credentials(creds, username)
+                user_name = get_google_user_name(creds)
                 st.sidebar.success(f"Hoşgeldin {user_name}!")
                 st.experimental_set_query_params()  # Clear the query parameters to simulate a rerun
                 return creds
@@ -71,6 +74,11 @@ def authenticate(username):
         elif st.experimental_get_query_params().get('error'):
             st.sidebar.error(f"Error during authorization: {st.experimental_get_query_params()['error'][0]}")
     return None
+
+def get_google_user_name(creds):
+    service = build('oauth2', 'v2', credentials=creds)
+    user_info = service.userinfo().get().execute()
+    return user_info['name']
 
 def get_calendar_service(creds):
     service = build('calendar', 'v3', credentials=creds)

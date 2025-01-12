@@ -91,7 +91,9 @@ def authenticate(username, password):
         query_params = st.query_params
         if 'code' in query_params:
             try:
-                flow.fetch_token(code=query_params['code'][0])
+                code = query_params['code'][0]
+                st.write(f"Received authorization code: {code}")  # Log the received authorization code
+                flow.fetch_token(code=code)
                 creds = flow.credentials
                 save_credentials(creds, username)
                 kullanici_adi = get_google_user_name(creds)
@@ -100,9 +102,12 @@ def authenticate(username, password):
                 return creds, kullanici_adi
             except Exception as e:
                 st.sidebar.error(f"Error during authorization: {e}")
+                st.write(f"Authorization error details: {e}")  # Log the error details
         elif 'error' in query_params:
             st.sidebar.error(f"Error during authorization: {query_params['error'][0]}")
+            st.write(f"Authorization error: {query_params['error'][0]}")  # Log the error details
     return None, None
+
 
 def get_google_user_name(creds):
     if not creds or not creds.valid:

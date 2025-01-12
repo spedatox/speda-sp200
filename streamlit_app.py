@@ -135,7 +135,7 @@ def generate_response(user_input, user_name):
         model="gpt-4",
         messages=[{"role": "system", "content": prompt}]
     )
-    return response.choices[0].message.content.strip()
+     st.write(response.choices[0].message.content.strip())  
 
 def main():
     st.title("Speda Takvim Asistanı")

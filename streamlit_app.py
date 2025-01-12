@@ -163,7 +163,7 @@ def main():
         user_name = get_user_info(creds)
         st.sidebar.success(f"Hoşgeldin, {user_name}!")
 
-        user_input = st.chat_input("What is up?")
+        user_input = st.chat_input("SPEDAYA SORU SOR?")
         if user_input:
             st.session_state.messages.append({"role": "user", "content": user_input})
 

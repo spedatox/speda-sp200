@@ -88,8 +88,8 @@ def authenticate(username, password):
         st.sidebar.info("The app will log in automatically after authorization.")
 
         # Check the URL parameters when the OAuth flow is completed
-        if 'code' in st.query_params():
-            query_params = st.query_params()
+        query_params = st.experimental_get_query_params()
+        if 'code' in query_params:
             try:
                 flow.fetch_token(code=query_params['code'][0])
                 creds = flow.credentials
@@ -100,8 +100,8 @@ def authenticate(username, password):
                 return creds, kullanici_adi
             except Exception as e:
                 st.sidebar.error(f"Error during authorization: {e}")
-        elif 'error' in st.query_params():
-            st.sidebar.error(f"Error during authorization: {st.query_params()['error'][0]}")
+        elif 'error' in query_params:
+            st.sidebar.error(f"Error during authorization: {query_params['error'][0]}")
     return None, None
 
 def get_google_user_name(creds):
@@ -152,7 +152,7 @@ def add_event(service, calendar_id, summary, start_time, end_time):
     return event
 
 def summarize_events(events):
-    event_descriptions = "\n".join([
+    event_descriptions = "\n.join([
         f"{event['start'].get('dateTime', event['start'].get('date'))}: {event['summary']}"
         for event in events
     ])
@@ -177,7 +177,7 @@ def generate_response(user_input, kullanici_adi, messages):
     if not user_input:
         return "No user input provided."
 
-    content = f"Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi"
+    content = f"Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilir."
     prompt = f"{content}\n\n{user_input}"
 
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))

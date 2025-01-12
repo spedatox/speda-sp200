@@ -10,7 +10,7 @@ import openai
 from datetime import datetime, timedelta
 
 # Google Calendar API settings
-SCOPES = ['https://www.googleapis.com/auth/calendar']
+SCOPES = ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/userinfo.profile']
 CLIENT_SECRETS_FILE = "credentials.json"
 REDIRECT_URI = "https://spedatox.streamlit.app"  # Your Streamlit app URL
 

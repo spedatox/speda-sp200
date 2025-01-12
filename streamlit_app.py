@@ -60,7 +60,7 @@ def authenticate(username):
                 flow.fetch_token(code=query_params['code'][0])
                 creds = flow.credentials
                 save_credentials(creds, username)
-                st.sidebar.success(f"{username}, login successful!")
+                st.sidebar.success(f"Hoşgeldin{user_name}!")
                 st.experimental_set_query_params()  # Clear the query parameters to simulate a rerun
                 return creds
             except Exception as e:

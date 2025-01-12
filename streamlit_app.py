@@ -238,8 +238,7 @@ def main():
                 try:
                     events = list_events(service, selected_calendar_id)
                     if not events:
-                        with st.chat_message("assistant"):
-                            st.write("Yakın zamanda hiçbir etkinlik bulunamadı.")
+                        st.session_state.messages.append({"role": "assistant", "content": "Yakın zamanda hiçbir etkinlik bulunamadı."})
                     else:
                         response = summarize_events(events)
                         st.session_state.messages.append({"role": "assistant", "content": "### Mevcut Etkinlikler\n" + response})
@@ -249,37 +248,36 @@ def main():
                 st.session_state.messages.append({"role": "assistant", "content": "Lütfen etkinlik bilgilerini girin:"})
                 st.session_state.show_form = True
 
-        if st.session_state.show_form:
-            with st.chat_message("assistant"):
-                with st.form("add_event_form_from_prompt", clear_on_submit=False):
-                    summary = st.text_input("Etkinlik Başlığı:")
-                    start_date = st.date_input("Başlangıç Tarihi")
-                    start_time = st.time_input("Başlangıç Saati")
-                    end_date = st.date_input("Bitiş Tarihi")
-                    end_time = st.time_input("Bitiş Saati")
-                    submitted_event = st.form_submit_button("Etkinliği Ekle")
+        # Mesajları chat mesaj balonu içinde görüntüle
+        for message in st.session_state.messages:
+            if message["role"] == "user":
+                with st.chat_message("user"):
+                    st.write(message['content'])
+            else:
+                with st.chat_message("assistant"):
+                    st.write(message['content'])
+                    # Etkinlik formunu burada görüntüleyin
+                    if st.session_state.show_form and message["content"] == "Lütfen etkinlik bilgilerini girin:":
+                        with st.form("add_event_form_from_prompt", clear_on_submit=False):
+                            summary = st.text_input("Etkinlik Başlığı:")
+                            start_date = st.date_input("Başlangıç Tarihi")
+                            start_time = st.time_input("Başlangıç Saati")
+                            end_date = st.date_input("Bitiş Tarihi")
+                            end_time = st.time_input("Bitiş Saati")
+                            submitted_event = st.form_submit_button("Etkinliği Ekle")
 
-                    if submitted_event:
-                        try:
-                            if not summary:
-                                st.error("Etkinlik başlığı boş bırakılamaz.")
-                            else:
-                                start_datetime = datetime.combine(start_date, start_time).isoformat()
-                                end_datetime = datetime.combine(end_date, end_time).isoformat()
-                                event = add_event(service, selected_calendar_id, summary, start_datetime, end_datetime)
-                                st.session_state.messages.append({"role": "assistant", "content": f"Etkinlik başarıyla eklendi: [Etkinliğe Git]({event.get('htmlLink')})"})
-                        except Exception as e:
-                            st.error(f"Etkinlik eklenirken bir hata oluştu: {e}")
-
-    # Mesajları chat mesaj balonu içinde görüntüle
-    for message in st.session_state.messages:
-        if message["role"] == "user":
-            with st.chat_message("user"):
-                st.write(message['content'])
-        else:
-            with st.chat_message("assistant"):
-                st.write(message['content'])
-
+                            if submitted_event:
+                                try:
+                                    if not summary:
+                                        st.error("Etkinlik başlığı boş bırakılamaz.")
+                                    else:
+                                        start_datetime = datetime.combine(start_date, start_time).isoformat()
+                                        end_datetime = datetime.combine(end_date, end_time).isoformat()
+                                        event = add_event(service, selected_calendar_id, summary, start_datetime, end_datetime)
+                                        st.session_state.messages.append({"role": "assistant", "content": f"Etkinlik başarıyla eklendi: [Etkinliğe Git]({event.get('htmlLink')})"})
+                                        st.session_state.show_form = False  # Formu kapat
+                                except Exception as e:
+                                    st.error(f"Etkinlik eklenirken bir hata oluştu: {e}")
 
 if __name__ == '__main__':
     main()

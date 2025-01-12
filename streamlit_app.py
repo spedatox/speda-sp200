@@ -178,8 +178,12 @@ def main():
                     start_time = st.time_input("Başlangıç Saati")
                     end_date = st.date_input("Bitiş Tarihi")
                     end_time = st.time_input("Bitiş Saati")
+
+                    # Detailed logging
                     st.write(f"Form state: {st.session_state.show_event_form}")
                     st.write(f"Inputs - Summary: {summary}, Start: {start_date} {start_time}, End: {end_date} {end_time}")
+                    st.write(f"Session state: {st.session_state}")
+
                     if st.button("Etkinliği Ekle"):
                         try:
                             if summary and start_date and start_time and end_date and end_time:

@@ -112,7 +112,8 @@ def authenticate(username, password):
         st.sidebar.markdown(f"Click [here]({auth_url}) to log in with your Google account")
         st.sidebar.info("The app will log in automatically after authorization.")
 
-        query_params = st.query_params()
+       # Check the URL parameters when the OAuth flow is completed
+        query_params = st.query_params
         if 'code' in query_params:
             try:
                 flow.fetch_token(code=query_params['code'][0])
@@ -120,7 +121,7 @@ def authenticate(username, password):
                 save_credentials(creds, username)
                 kullanici_adi = get_google_user_name(creds)
                 st.sidebar.success(f"Hoşgeldin {kullanici_adi}!")
-                st.experimental_set_query_params()  # Clear query params to simulate re-run
+                st.experimental_set_query_params()  # Clear query parameters to simulate a rerun
                 return creds, kullanici_adi
             except Exception as e:
                 st.sidebar.error(f"Error during authorization: {e}")

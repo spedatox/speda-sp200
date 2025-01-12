@@ -199,7 +199,7 @@ def main():
                     st.error(f"Etkinlikler listelenirken bir hata oluştu: {e}")
             else:
                 messages = [{"role": message["role"], "content": message["content"]} for message in st.session_state.messages]
-                response = generate_response(user_input, username)
+                response = generate_response(user_input, username, messages)
                 st.session_state.messages.append({"role": "assistant", "content": response})
 
     # Mesajları chat mesaj balonu içinde görüntüle

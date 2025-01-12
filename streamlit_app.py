@@ -109,7 +109,8 @@ def summarize_events(events):
         for event in events
     ])
     prompt = f"Aşağıdaki etkinlikleri ilk önce okunaklı bir liste olarak (Örneğin: 1 Ocak 2000 - (ETKİNLİK ADI)) yazıp daha sonrasında kısa bir şekilde özetle, esprili olabilirsin ama kısa ve öz olsun. Etkinlikler: {event_descriptions}"
-    response = openai.ChatCompletion.create(
+    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}]
     )
@@ -117,8 +118,9 @@ def summarize_events(events):
 
 def convert_time_to_iso_format(time_str):
     prompt = f"Convert the following time '{time_str}' to ISO 8601 format."
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
+    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}]
     )
     return response.choices[0].message.content.strip()
@@ -127,11 +129,12 @@ def generate_response(user_input, user_name):
     if not user_input:
         return "No user input provided."
 
-    content = f"Adın Speda Ahmet Erol Bayrak tarafından geliştirilen bir yapay zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse her şeyi yapabilirsin."
+    content = f"Adın Speda Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilir"
     prompt = f"{content}\n\n{user_input}"
 
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
+    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
         messages=[{"role": "system", "content": prompt}]
     )
     return response.choices[0].message.content.strip()

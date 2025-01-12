@@ -125,7 +125,7 @@ def convert_time_to_iso_format(time_str):
     )
     return response.choices[0].message.content.strip()
 
-def generate_response(user_input, user_name):
+def generate_response(user_input, user_name, messages):
     if not user_input:
         return "No user input provided."
 
@@ -133,12 +133,12 @@ def generate_response(user_input, user_name):
     prompt = f"{content}\n\n{user_input}"
 
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    all_messages = messages + [{"role": "user", "content": prompt}]
     response = client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[{"role": "system", "content": prompt}]
+        messages=all_messages
     )
     return response.choices[0].message.content.strip()
-
 
 def main():
     st.title("Speda Takvim Asistanı")

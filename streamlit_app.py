@@ -195,6 +195,7 @@ def main():
                                 st.error("Tüm alanları doldurduğunuzdan emin olun.")
                         except Exception as e:
                             st.error(f"Etkinlik eklenirken bir hata oluştu: {e}")
+                        st.session_state.show_event_form = True
 
             elif "liste" in user_input.lower():
                 try:

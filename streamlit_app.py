@@ -191,13 +191,10 @@ def main():
                                 end_datetime = datetime.combine(end_date, end_time).isoformat()
                                 event = add_event(service, summary, start_datetime, end_datetime)
                                 st.success(f"Etkinlik başarıyla eklendi: [Etkinliğe Git]({event.get('htmlLink')})")
-                                st.session_state.show_event_form = False
                             else:
                                 st.error("Tüm alanları doldurduğunuzdan emin olun.")
                         except Exception as e:
                             st.error(f"Etkinlik eklenirken bir hata oluştu: {e}")
-                    else:
-                        st.session_state.show_event_form = True
 
             elif "liste" in user_input.lower():
                 try:

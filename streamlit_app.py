@@ -37,12 +37,14 @@ def save_credentials(creds, username):
 
 def authenticate(username):
     creds = load_credentials(username)
-    
+
     if creds and creds.valid:
+        st.sidebar.success(f"Hoşgeldin {user_name}!")
         return creds
     elif creds and creds.expired and creds.refresh_token:
         creds.refresh(Request())
         save_credentials(creds, username)
+        st.sidebar.success(f"Hoşgeldin {username}!")
         return creds
     else:
         flow = Flow.from_client_secrets_file(
@@ -53,7 +55,7 @@ def authenticate(username):
         auth_url, _ = flow.authorization_url(prompt='consent', access_type='offline')
         st.sidebar.markdown(f"Click [here]({auth_url}) to log in with your Google account")
         st.sidebar.info("The app will log in automatically after authorization.")
-        
+
         # Check the URL parameters when the OAuth flow is completed
         if st.experimental_get_query_params().get('code'):
             query_params = st.experimental_get_query_params()
@@ -61,7 +63,7 @@ def authenticate(username):
                 flow.fetch_token(code=query_params['code'][0])
                 creds = flow.credentials
                 save_credentials(creds, username)
-                st.sidebar.success(f"Hoşgeldin{user_name}!")
+                st.sidebar.success(f"Hoşgeldin {user_name}!")
                 st.experimental_set_query_params()  # Clear the query parameters to simulate a rerun
                 return creds
             except Exception as e:

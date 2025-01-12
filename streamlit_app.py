@@ -195,7 +195,11 @@ def main():
     if 'messages' not in st.session_state:
         st.session_state.messages = []
 
-    creds, kullanici_adi = None, None  # Initialize variables
+    if 'creds' not in st.session_state:
+        st.session_state.creds = None
+
+    if 'kullanici_adi' not in st.session_state:
+        st.session_state.kullanici_adi = None
 
     with st.sidebar:
         st.header("Kullanıcı Girişi")
@@ -204,7 +208,11 @@ def main():
         if st.button("Giriş Yap"):
             if username and password:
                 creds, kullanici_adi = authenticate(username, password)
-                st.session_state.kullanici_adi = kullanici_adi  # Store the Google user name in session state
+                st.session_state.creds = creds
+                st.session_state.kullanici_adi = kullanici_adi
+
+    creds = st.session_state.creds
+    kullanici_adi = st.session_state.kullanici_adi
 
     if creds:
         service = get_calendar_service(creds)
@@ -257,7 +265,7 @@ def main():
                             st.error(f"Etkinlik eklenirken bir hata oluştu: {e}")
             else:
                 messages = [{"role": message["role"], "content": message["content"]} for message in st.session_state.messages]
-                response = generate_response(user_input, st.session_state.kullanici_adi, messages)
+                response = generate_response(user_input, kullanici_adi, messages)
                 st.session_state.messages.append({"role": "assistant", "content": response})
 
     # Mesajları chat mesaj balonu içinde görüntüle

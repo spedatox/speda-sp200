@@ -177,16 +177,21 @@ def generate_response(user_input, kullanici_adi, messages):
     if not user_input:
         return "No user input provided."
 
-    content = f"Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilisin kullanıcının adı:{kullanici_adi}"
+    content = f"Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yap"
     prompt = f"{content}\n\n{user_input}"
 
-    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    all_messages = messages + [{"role": "user", "content": prompt}]
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=all_messages
-    )
-    return response.choices[0].message.content.strip()
+    try:
+        client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        all_messages = messages + [{"role": "user", "content": prompt}]
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=all_messages
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"Error invoking OpenAI API: {e}")
+        return "An error occurred while generating the response."
+
 
 def main():
     st.title("Speda Takvim Asistanı")

@@ -1,56 +1,207 @@
+import os
+import json
 import streamlit as st
-from openai import OpenAI
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import Flow
+from google.auth.transport.requests import Request
+from googleapiclient.discovery import build
+import openai
+from datetime import datetime, timedelta
 
-# Show title and description.
-st.title("💬 Chatbot")
-st.write(
-    "This is a simple chatbot that uses OpenAI's GPT-3.5 model to generate responses. "
-    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). "
-    "You can also learn how to build this app step by step by [following our tutorial](https://docs.streamlit.io/develop/tutorials/llms/build-conversational-apps)."
-)
+# Google Calendar API settings
+SCOPES = ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/userinfo.profile']
+CLIENT_SECRETS_FILE = "credentials.json"
+REDIRECT_URI = "https://spedavtwo.streamlit.app"  # Your Streamlit app URL
 
-# Ask user for their OpenAI API key via `st.text_input`.
-# Alternatively, you can store the API key in `./.streamlit/secrets.toml` and access it
-# via `st.secrets`, see https://docs.streamlit.io/develop/concepts/connections/secrets-management
-openai_api_key = st.text_input("OpenAI API Key", type="password")
-if not openai_api_key:
-    st.info("Please add your OpenAI API key to continue.", icon="🗝️")
-else:
+# OpenAI API key
+openai.api_key = 'YOUR_OPENAI_API_KEY'
 
-    # Create an OpenAI client.
-    client = OpenAI(api_key=openai_api_key)
+# User-based token file
+def get_token(username):
+    return f"{username}_token.json"
 
-    # Create a session state variable to store the chat messages. This ensures that the
-    # messages persist across reruns.
-    if "messages" not in st.session_state:
+def load_credentials(username):
+    token_file = get_token(username)
+    creds = None
+    if os.path.exists(token_file):
+        with open(token_file, 'r') as token:
+            creds_data = json.load(token)
+            creds = Credentials.from_authorized_user_info(creds_data, SCOPES)
+    return creds
+
+def save_credentials(creds, username):
+    token_file = get_token(username)
+    with open(token_file, 'w') as token:
+        token.write(creds.to_json())
+
+def authenticate(username):
+    creds = load_credentials(username)
+    
+    if creds and creds.valid:
+        return creds
+    elif creds and creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+        save_credentials(creds, username)
+        return creds
+    else:
+        flow = Flow.from_client_secrets_file(
+            CLIENT_SECRETS_FILE,
+            scopes=SCOPES,
+            redirect_uri=REDIRECT_URI
+        )
+        auth_url, _ = flow.authorization_url(prompt='consent', access_type='offline')
+        st.sidebar.markdown(f"Click [here]({auth_url}) to log in with your Google account")
+        st.sidebar.info("The app will log in automatically after authorization.")
+        
+        # Check the URL parameters when the OAuth flow is completed
+        if st.experimental_get_query_params().get('code'):
+            query_params = st.experimental_get_query_params()
+            try:
+                flow.fetch_token(code=query_params['code'][0])
+                creds = flow.credentials
+                save_credentials(creds, username)
+                st.success(f"{username}, login successful!")
+                st.experimental_set_query_params()  # Clear the query parameters to simulate a rerun
+                return creds
+            except Exception as e:
+                st.error(f"Error during authorization: {e}")
+        elif st.experimental_get_query_params().get('error'):
+            st.error(f"Error during authorization: {st.experimental_get_query_params()['error'][0]}")
+    return None
+    
+def get_calendar_service(creds):
+    service = build('calendar', 'v3', credentials=creds)
+    return service
+
+def list_events(service):
+    now = datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
+    one_week_ago = (datetime.utcnow() - timedelta(days=7)).isoformat() + 'Z'
+    one_month_later = (datetime.utcnow() + timedelta(days=30)).isoformat() + 'Z'
+    events_result = service.events().list(
+        calendarId='primary',
+        timeMin=one_week_ago,
+        timeMax=one_month_later,
+        maxResults=50,
+        singleEvents=True,
+        orderBy='startTime'
+    ).execute()
+    events = events_result.get('items', [])
+    return events
+
+def add_event(service, summary, start_time, end_time):
+    event = {
+        'summary': summary,
+        'start': {
+            'dateTime': start_time,
+            'timeZone': 'Europe/Istanbul',
+        },
+        'end': {
+            'dateTime': end_time,
+            'timeZone': 'Europe/Istanbul',
+        },
+    }
+    event = service.events().insert(calendarId='primary', body=event).execute()
+    return event
+
+def summarize_events(events):
+    event_descriptions = "\n".join([
+        f"{event['start'].get('dateTime', event['start'].get('date'))}: {event['summary']}"
+        for event in events
+    ])
+    prompt = f"Aşağıdaki etkinlikleri ilk önce okunaklı bir liste olarak (Örneğin: 1 Ocak 2000 - (ETKİNLİK ADI)) yazıp daha sonrasında kısa bir şekilde özetle, esprili olabilirsin ama kısa ve öz olsun. Etkinlikler: {event_descriptions}"
+    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return response.choices[0].message.content.strip()
+
+def convert_time_to_iso_format(time_str):
+    prompt = f"Convert the following time '{time_str}' to ISO 8601 format."
+    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return response.choices[0].message.content.strip()
+
+def generate_response(prompt):
+    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return response.choices[0].message.content.strip()
+
+def get_user_info(creds):
+    user_info_service = build('oauth2', 'v2', credentials=creds)
+    user_info = user_info_service.userinfo().get().execute()
+    return user_info['name']
+
+def main():
+    st.title("Speda Takvim Asistanı")
+    st.caption("Google Takvimi entegre eden Chatbot")
+
+    if 'messages' not in st.session_state:
         st.session_state.messages = []
 
-    # Display the existing chat messages via `st.chat_message`.
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+    with st.sidebar:
+        username = st.text_input("Lütfen kullanıcı adınızı girin:")
+        if username:
+            creds = authenticate(username)
+        else:
+            creds = None
 
-    # Create a chat input field to allow the user to enter a message. This will display
-    # automatically at the bottom of the page.
-    if prompt := st.chat_input("What is up?"):
+    if creds:
+        service = get_calendar_service(creds)
+        user_name = get_user_info(creds)
+        st.sidebar.success(f"Hoşgeldin, {user_name}!")
 
-        # Store and display the current prompt.
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+        user_input = st.chat_input("What is up?")
+        if user_input:
+            st.session_state.messages.append({"role": "user", "content": user_input})
 
-        # Generate a response using the OpenAI API.
-        stream = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": m["role"], "content": m["content"]}
-                for m in st.session_state.messages
-            ],
-            stream=True,
-        )
+            if "ekle" in user_input.lower():
+                with st.form("add_event_form"):
+                    st.subheader("Etkinlik Bilgilerini Girin")
+                    summary = st.text_input("Etkinlik Başlığı:")
+                    start_date = st.date_input("Başlangıç Tarihi")
+                    start_time = st.time_input("Başlangıç Saati")
+                    end_date = st.date_input("Bitiş Tarihi")
+                    end_time = st.time_input("Bitiş Saati")
+                    submitted_event = st.form_submit_button("Etkinliği Ekle")
 
-        # Stream the response to the chat using `st.write_stream`, then store it in 
-        # session state.
-        with st.chat_message("assistant"):
-            response = st.write_stream(stream)
-        st.session_state.messages.append({"role": "assistant", "content": response})
+                    if submitted_event:
+                        try:
+                            start_datetime = datetime.combine(start_date, start_time).isoformat()
+                            end_datetime = datetime.combine(end_date, end_time).isoformat()
+                            event = add_event(service, summary, start_datetime, end_datetime)
+                            st.success(f"Etkinlik başarıyla eklendi: [Etkinliğe Git]({event.get('htmlLink')})")
+                        except Exception as e:
+                            st.error(f"Etkinlik eklenirken bir hata oluştu: {e}")
+
+            elif "liste" in user_input.lower():
+                try:
+                    events = list_events(service)
+                    if not events:
+                        st.info("Yakın zamanda hiçbir etkinlik bulunamadı.")
+                    else:
+                        st.subheader("Mevcut Etkinlikler")
+                        response = summarize_events(events)
+                        st.session_state.messages.append({"role": "assistant", "content": response})
+                except Exception as e:
+                    st.error(f"Etkinlikler listelenirken bir hata oluştu: {e}")
+            else:
+                response = generate_response(user_input)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+
+        for message in st.session_state.messages:
+            if message["role"] == "user":
+                with st.chat_message("user"):
+                    st.write(message['content'])
+            else:
+                with st.chat_message("assistant"):
+                    st.write(message['content'])
+
+if __name__ == '__main__':
+    main()

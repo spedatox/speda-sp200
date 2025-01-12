@@ -192,18 +192,14 @@ def main():
                             st.write("Yakın zamanda hiçbir etkinlik bulunamadı.")
                     else:
                         response = summarize_events(events)
-                        with st.chat_message("assistant"):
-                            st.write("### Mevcut Etkinlikler")
-                            st.write(response)
-                        st.session_state.messages.append({"role": "assistant", "content": response})
+                        st.session_state.messages.append({"role": "assistant", "content": "### Mevcut Etkinlikler\n" + response})
                 except Exception as e:
                     st.error(f"Etkinlikler listelenirken bir hata oluştu: {e}")
             else:
                 response = generate_response(user_input, username)
-                with st.chat_message("assistant"):
-                    st.write(response)
                 st.session_state.messages.append({"role": "assistant", "content": response})
 
+    # Mesajları chat mesaj balonu içinde görüntüle
     for message in st.session_state.messages:
         if message["role"] == "user":
             with st.chat_message("user"):
@@ -211,6 +207,7 @@ def main():
         else:
             with st.chat_message("assistant"):
                 st.write(message['content'])
+
 
 if __name__ == '__main__':
     main()

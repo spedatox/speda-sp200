@@ -145,6 +145,8 @@ def main():
 
     if 'messages' not in st.session_state:
         st.session_state.messages = []
+    if 'show_add_event_form' not in st.session_state:
+        st.session_state.show_add_event_form = False
 
     with st.sidebar:
         username = st.text_input("Lütfen kullanıcı adınızı girin:")
@@ -156,29 +158,12 @@ def main():
     if creds:
         service = get_calendar_service(creds)
 
-        user_input = st.chat_input("What is up?")
+        user_input = st.chat_input("Ne yapmak istiyorsunuz?")
         if user_input:
             st.session_state.messages.append({"role": "user", "content": user_input})
 
             if "ekle" in user_input.lower():
-                with st.form("add_event_form"):
-                    st.subheader("Etkinlik Bilgilerini Girin")
-                    summary = st.text_input("Etkinlik Başlığı:")
-                    start_date = st.date_input("Başlangıç Tarihi")
-                    start_time = st.time_input("Başlangıç Saati")
-                    end_date = st.date_input("Bitiş Tarihi")
-                    end_time = st.time_input("Bitiş Saati")
-                    submitted_event = st.form_submit_button("Etkinliği Ekle")
-
-                    if submitted_event:
-                        try:
-                            start_datetime = datetime.combine(start_date, start_time).isoformat()
-                            end_datetime = datetime.combine(end_date, end_time).isoformat()
-                            event = add_event(service, summary, start_datetime, end_datetime)
-                            st.success(f"Etkinlik başarıyla eklendi: [Etkinliğe Git]({event.get('htmlLink')})")
-                        except Exception as e:
-                            st.error(f"Etkinlik eklenirken bir hata oluştu: {e}")
-
+                st.session_state.show_add_event_form = True
             elif "liste" in user_input.lower():
                 try:
                     events = list_events(service)
@@ -194,6 +179,31 @@ def main():
                 response = generate_response(user_input, username)
                 st.session_state.messages.append({"role": "assistant", "content": response})
 
+        # Formu göster
+        if st.session_state.show_add_event_form:
+            with st.form("add_event_form"):
+                st.subheader("Etkinlik Bilgilerini Girin")
+                summary = st.text_input("Etkinlik Başlığı:")
+                start_date = st.date_input("Başlangıç Tarihi")
+                start_time = st.time_input("Başlangıç Saati")
+                end_date = st.date_input("Bitiş Tarihi")
+                end_time = st.time_input("Bitiş Saati")
+                submitted_event = st.form_submit_button("Etkinliği Ekle")
+
+                if submitted_event:
+                    try:
+                        if not summary:
+                            st.error("Etkinlik başlığı boş bırakılamaz.")
+                        else:
+                            start_datetime = datetime.combine(start_date, start_time).isoformat()
+                            end_datetime = datetime.combine(end_date, end_time).isoformat()
+                            event = add_event(service, summary, start_datetime, end_datetime)
+                            st.success(f"Etkinlik başarıyla eklendi: [Etkinliğe Git]({event.get('htmlLink')})")
+                            # Formu kapatmayın, böylece form açık kalır
+                    except Exception as e:
+                        st.error(f"Etkinlik eklenirken bir hata oluştu: {e}")
+
+        # Mesajları göster
         for message in st.session_state.messages:
             if message["role"] == "user":
                 with st.chat_message("user"):

@@ -126,6 +126,7 @@ def convert_time_to_iso_format(time_str):
     return response.choices[0].message.content.strip()
 
 def generate_response(prompt):
+    prompt =f"Adın Speda Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Google Takvim ENtegrasyonun Sayesinde Kullanıcının Takvimindeki Etkinlikleri Görüntüleyebilir, Özetleyebilir, veya yeni bir etk,nl,k oluşturabilirsin. Kullanıcının Adı{user_name}. Google Takvim özelliklerin nasıl kullanıldığını sorulursa şunu söyle; eğer takviminizde deki etkinlikleri özetleme istiyorsanız söylediğiniz cümlenin içinde liste kelimesinin geçtiğinden emin olun, örneğin 'Speda, bugünkü programımı listele' gibi. Eğer etkinlik eklemek istiyorsanız bana söylediğiniz cümlenin içinde ekle kelimesinin geçtiğinden emin olun örneğin, 'Speda, bugüne yeni program ekle' gibi.
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     response = client.chat.completions.create(
         model="gpt-4o-mini",

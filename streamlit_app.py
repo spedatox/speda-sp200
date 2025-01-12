@@ -125,7 +125,7 @@ def convert_time_to_iso_format(time_str):
     )
     return response.choices[0].message.content.strip()
 
-def generate_response(prompt, user_name):
+def generate_response(user_input, user_name):
     prompt = f"Adın Speda Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirsin."
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     response = client.chat.completions.create(

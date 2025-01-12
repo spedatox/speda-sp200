@@ -129,7 +129,7 @@ def generate_response(user_input, user_name):
     if not user_input:
         return "No user input provided."
 
-    content = f"Adın Speda Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirs"
+    content = f"Adın Speda Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilir"
     prompt = f"{content}\n\n{user_input}"
 
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -171,7 +171,7 @@ def main():
                 st.session_state.show_event_form = True
 
             if "show_event_form" in st.session_state and st.session_state.show_event_form:
-                with st.chat_message("assistant"):
+                with st.sidebar:
                     st.subheader("Etkinlik Bilgilerini Girin")
                     summary = st.text_input("Etkinlik Başlığı:")
                     start_date = st.date_input("Başlangıç Tarihi")

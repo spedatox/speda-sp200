@@ -50,8 +50,8 @@ def authenticate(username):
             redirect_uri=REDIRECT_URI
         )
         auth_url, _ = flow.authorization_url(prompt='consent', access_type='offline')
-        st.sidebar.markdown(f"Click [here]({auth_url}) to log in with your Google account")
-        st.sidebar.info("The app will log in automatically after authorization.")
+        st.sidebar.markdown(f"Google Hesabınızla Giriş Yapmak için [burayı]({auth_url}) tıklayın.")
+        st.sidebar.info("Giriş işleminden sonra kullanıcı adınızı yazıp kullanmaya başlayabilirsiniz")
         
         # Check the URL parameters when the OAuth flow is completed
         if st.experimental_get_query_params().get('code'):
@@ -108,7 +108,7 @@ def summarize_events(events):
         f"{event['start'].get('dateTime', event['start'].get('date'))}: {event['summary']}"
         for event in events
     ])
-    prompt = f"Aşağıdaki etkinlikleri ilk önce okunaklı bir liste olarak (Örneğin: 1 Ocak 2000 - (ETKİNLİK ADI)) yazıp daha sonrasında kısa bir şekilde özetle, esprili olabilirsin ama k�[...]
+    prompt = f"Aşağıdaki etkinlikleri ilk önce okunaklı bir liste olarak (Örneğin: 1 Ocak 2000 - (ETKİNLİK ADI)) yazıp daha sonrasında kısa bir şekilde özetle, esprili olabilirsin ama kısa ve öz olsun. Etkinlikler: {event_descriptions}"
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     response = client.chat.completions.create(
         model="gpt-4o-mini",

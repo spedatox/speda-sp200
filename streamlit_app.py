@@ -108,7 +108,7 @@ def summarize_events(events):
         f"{event['start'].get('dateTime', event['start'].get('date'))}: {event['summary']}"
         for event in events
     ])
-    prompt = f"Aşağıdaki etkinlikleri ilk önce okunaklı bir liste olarak (Örneğin: 1 Ocak 2000 - (ETKİNLİK ADI)) yazıp daha sonrasında kısa bir şekilde özetle, esprili olabilirsin ama kısa ve öz olsun. Etkinlikler: {event_descriptions}"
+    prompt = f"Aşağıdaki etkinlikleri ilk önce okunaklı bir liste olarak (Örneğin: 1 Ocak 2000 - (ETKİNLİK ADI)) yazıp daha sonrasında kısa bir şekilde özetle, esprili olabilirsin, {event_descriptions}
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -126,7 +126,7 @@ def convert_time_to_iso_format(time_str):
     return response.choices[0].message.content.strip()
 
 def generate_response(prompt, user_name):
-    prompt = f"Adın Speda Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyiyapabilirsin. Üstelik, Google Takvim Entegrasyonun Sayesinde Kullanıcının Takvimindeki Etkinlikleri Görüntüleyebilir, Özetleyebilir, veya yeni bir etk,nl,k oluşturabilirsin. Kullanıcının Adı {user_name}."
+    prompt = f"Adın Speda Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirsin."
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -163,20 +163,25 @@ def main():
             st.session_state.messages.append({"role": "user", "content": user_input})
 
             if "ekle" in user_input.lower():
-                st.subheader("Etkinlik Bilgilerini Girin")
-                summary = st.text_input("Etkinlik Başlığı:")
-                start_date = st.date_input("Başlangıç Tarihi")
-                start_time = st.time_input("Başlangıç Saati")
-                end_date = st.date_input("Bitiş Tarihi")
-                end_time = st.time_input("Bitiş Saati")
-                if st.button("Etkinliği Ekle"):
-                    try:
-                        start_datetime = datetime.combine(start_date, start_time).isoformat()
-                        end_datetime = datetime.combine(end_date, end_time).isoformat()
-                        event = add_event(service, summary, start_datetime, end_datetime)
-                        st.success(f"Etkinlik başarıyla eklendi: [Etkinliğe Git]({event.get('htmlLink')})")
-                    except Exception as e:
-                        st.error(f"Etkinlik eklenirken bir hata oluştu: {e}")
+                st.session_state.show_event_form = True
+
+            if "show_event_form" in st.session_state and st.session_state.show_event_form:
+                with st.chat_message("assistant"):
+                    st.subheader("Etkinlik Bilgilerini Girin")
+                    summary = st.text_input("Etkinlik Başlığı:")
+                    start_date = st.date_input("Başlangıç Tarihi")
+                    start_time = st.time_input("Başlangıç Saati")
+                    end_date = st.date_input("Bitiş Tarihi")
+                    end_time = st.time_input("Bitiş Saati")
+                    if st.button("Etkinliği Ekle"):
+                        try:
+                            start_datetime = datetime.combine(start_date, start_time).isoformat()
+                            end_datetime = datetime.combine(end_date, end_time).isoformat()
+                            event = add_event(service, summary, start_datetime, end_datetime)
+                            st.success(f"Etkinlik başarıyla eklendi: [Etkinliğe Git]({event.get('htmlLink')})")
+                            st.session_state.show_event_form = False
+                        except Exception as e:
+                            st.error(f"Etkinlik eklenirken bir hata oluştu: {e}")
 
             elif "liste" in user_input.lower():
                 try:

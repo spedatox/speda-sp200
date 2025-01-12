@@ -9,9 +9,9 @@ import openai
 from datetime import datetime, timedelta
 
 # Google Calendar API settings
-SCOPES = ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/userinfo.profile']
+SCOPES = ['https://www.googleapis.com/auth/calendar']
 CLIENT_SECRETS_FILE = "credentials.json"
-REDIRECT_URI = "https://spedatox.streamlit.app"  # Your Streamlit app URL
+REDIRECT_URI = "https://spedavtwo.streamlit.app"  # Your Streamlit app URL
 
 # OpenAI API key
 openai.api_key = 'YOUR_OPENAI_API_KEY'
@@ -50,8 +50,8 @@ def authenticate(username):
             redirect_uri=REDIRECT_URI
         )
         auth_url, _ = flow.authorization_url(prompt='consent', access_type='offline')
-        st.sidebar.markdown(f"Google Hesabınızla Giriş Yapmak için [burayı]({auth_url}) tıklayın.")
-        st.sidebar.info("Giriş işleminden sonra kullanıcı adınızı yazıp kullanmaya başlayabilirsiniz")
+        st.sidebar.markdown(f"Click [here]({auth_url}) to log in with your Google account")
+        st.sidebar.info("The app will log in automatically after authorization.")
         
         # Check the URL parameters when the OAuth flow is completed
         if st.experimental_get_query_params().get('code'):
@@ -68,7 +68,7 @@ def authenticate(username):
         elif st.experimental_get_query_params().get('error'):
             st.error(f"Error during authorization: {st.experimental_get_query_params()['error'][0]}")
     return None
-    
+
 def get_calendar_service(creds):
     service = build('calendar', 'v3', credentials=creds)
     return service
@@ -108,7 +108,7 @@ def summarize_events(events):
         f"{event['start'].get('dateTime', event['start'].get('date'))}: {event['summary']}"
         for event in events
     ])
-    prompt = f"Aşağıdaki etkinlikleri ilk önce okunaklı bir liste olarak (Örneğin: 1 Ocak 2000 - (ETKİNLİK ADI)) yazıp daha sonrasında kısa bir şekilde özetle, esprili olabilirsin,"
+prompt = f"Aşağıdaki etkinlikleri ilk önce okunaklı bir liste olarak (Örneğin: 1 Ocak 2000 - (ETKİNLİK ADI)) yazıp daha sonrasında kısa bir şekilde özetle, esprili olabilirsin ama kısa ve öz olsun. Etkinlikler: {event_descriptions}"
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -139,11 +139,6 @@ def generate_response(user_input, user_name):
     )
     return response.choices[0].message.content.strip()
 
-def get_user_info(creds):
-    user_info_service = build('oauth2', 'v2', credentials=creds)
-    user_info = user_info_service.userinfo().get().execute()
-    return user_info['name']
-
 def main():
     st.title("Speda Takvim Asistanı")
     st.caption("Google Takvimi entegre eden Chatbot")
@@ -160,43 +155,29 @@ def main():
 
     if creds:
         service = get_calendar_service(creds)
-        user_name = get_user_info(creds)
-        st.sidebar.success(f"Hoşgeldin, {user_name}!")
 
-        user_input = st.chat_input("SPEDAYA SORU SOR?")
+        user_input = st.chat_input("What is up?")
         if user_input:
             st.session_state.messages.append({"role": "user", "content": user_input})
 
             if "ekle" in user_input.lower():
-                st.session_state.show_event_form = True
-
-            if "show_event_form" in st.session_state and st.session_state.show_event_form:
-                with st.sidebar:
+                with st.form("add_event_form"):
                     st.subheader("Etkinlik Bilgilerini Girin")
                     summary = st.text_input("Etkinlik Başlığı:")
                     start_date = st.date_input("Başlangıç Tarihi")
                     start_time = st.time_input("Başlangıç Saati")
                     end_date = st.date_input("Bitiş Tarihi")
                     end_time = st.time_input("Bitiş Saati")
+                    submitted_event = st.form_submit_button("Etkinliği Ekle")
 
-                    # Detailed logging
-                    st.write(f"Form state: {st.session_state.show_event_form}")
-                    st.write(f"Inputs - Summary: {summary}, Start: {start_date} {start_time}, End: {end_date} {end_time}")
-                    st.write(f"Session state: {st.session_state}")
-
-                    if st.button("Etkinliği Ekle"):
+                    if submitted_event:
                         try:
-                            if summary and start_date and start_time and end_date and end_time:
-                                start_datetime = datetime.combine(start_date, start_time).isoformat()
-                                end_datetime = datetime.combine(end_date, end_time).isoformat()
-                                event = add_event(service, summary, start_datetime, end_datetime)
-                                st.success(f"Etkinlik başarıyla eklendi: [Etkinliğe Git]({event.get('htmlLink')})")
-                            else:
-                                st.error("Tüm alanları doldurduğunuzdan emin olun.")
+                            start_datetime = datetime.combine(start_date, start_time).isoformat()
+                            end_datetime = datetime.combine(end_date, end_time).isoformat()
+                            event = add_event(service, summary, start_datetime, end_datetime)
+                            st.success(f"Etkinlik başarıyla eklendi: [Etkinliğe Git]({event.get('htmlLink')})")
                         except Exception as e:
                             st.error(f"Etkinlik eklenirken bir hata oluştu: {e}")
-                        finally:
-                            st.session_state.show_event_form = True
 
             elif "liste" in user_input.lower():
                 try:
@@ -210,7 +191,7 @@ def main():
                 except Exception as e:
                     st.error(f"Etkinlikler listelenirken bir hata oluştu: {e}")
             else:
-                response = generate_response(user_input, user_name)
+                response = generate_response(user_input)
                 st.session_state.messages.append({"role": "assistant", "content": response})
 
         for message in st.session_state.messages:
@@ -223,3 +204,29 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

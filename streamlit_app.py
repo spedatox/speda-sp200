@@ -126,15 +126,18 @@ def convert_time_to_iso_format(time_str):
     return response.choices[0].message.content.strip()
 
 def generate_response(user_input, user_name):
-    content = f"Adın Speda Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirsin. Kullanıcının Adı {user_name}."
-    prompt = user_input
+    if not user_input:
+        return "No user input provided."
+
+    content = f"Adın Speda Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirsin."
+    prompt = f"{content}\n\n{user_input}"
+
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     response = client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[{"role": "system", content: prompt}]
+        messages=[{"role": "system", "content": prompt}]
     )
     return response.choices[0].message.content.strip()
-
 
 def get_user_info(creds):
     user_info_service = build('oauth2', 'v2', credentials=creds)

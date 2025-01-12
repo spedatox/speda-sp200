@@ -117,7 +117,6 @@ def summarize_events(events):
     )
     return response.choices[0].message.content.strip()
 
-
 def convert_time_to_iso_format(time_str):
     prompt = f"Convert the following time '{time_str}' to ISO 8601 format."
     response = openai.ChatCompletion.create(
@@ -173,7 +172,6 @@ def main():
                             end_datetime = datetime.combine(end_date, end_time).isoformat()
                             event = add_event(service, summary, start_datetime, end_datetime)
                             st.success(f"Etkinlik başarıyla eklendi: [Etkinliğe Git]({event.get('htmlLink')})")
-                            # Formu kapatmıyoruz, böylece form açık kalır
                     except Exception as e:
                         st.error(f"Etkinlik eklenirken bir hata oluştu: {e}")
         else:
@@ -187,27 +185,25 @@ def main():
             st.session_state.messages.append({"role": "user", "content": user_input})
 
             if "liste" in user_input.lower():
-    try:
-        events = list_events(service)
-        if not events:
-            with st.chat_message("assistant"):
-                st.write("Yakın zamanda hiçbir etkinlik bulunamadı.")
-        else:
-            response = summarize_events(events)
-            with st.chat_message("assistant"):
-                st.write("### Mevcut Etkinlikler")  # Subheader yerine chat balonunda başlık
-                st.write(response)  # Etkinlik listesini mesaj balonunda göster
-            st.session_state.messages.append({"role": "assistant", "content": response})
-    except Exception as e:
-        st.error(f"Etkinlikler listelenirken bir hata oluştu: {e}")
-else:
-    response = generate_response(user_input, username)
-    with st.chat_message("assistant"):
-        st.write(response)
-    st.session_state.messages.append({"role": "assistant", "content": response})
+                try:
+                    events = list_events(service)
+                    if not events:
+                        with st.chat_message("assistant"):
+                            st.write("Yakın zamanda hiçbir etkinlik bulunamadı.")
+                    else:
+                        response = summarize_events(events)
+                        with st.chat_message("assistant"):
+                            st.write("### Mevcut Etkinlikler")
+                            st.write(response)
+                        st.session_state.messages.append({"role": "assistant", "content": response})
+                except Exception as e:
+                    st.error(f"Etkinlikler listelenirken bir hata oluştu: {e}")
+            else:
+                response = generate_response(user_input, username)
+                with st.chat_message("assistant"):
+                    st.write(response)
+                st.session_state.messages.append({"role": "assistant", "content": response})
 
-
-    # Mesajları göster
     for message in st.session_state.messages:
         if message["role"] == "user":
             with st.chat_message("user"):

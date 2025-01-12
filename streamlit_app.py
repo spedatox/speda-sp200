@@ -152,7 +152,7 @@ def add_event(service, calendar_id, summary, start_time, end_time):
     return event
 
 def summarize_events(events):
-    event_descriptions = "\n.join([
+    event_descriptions = ".join([
         f"{event['start'].get('dateTime', event['start'].get('date'))}: {event['summary']}"
         for event in events
     ])

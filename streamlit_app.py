@@ -18,6 +18,12 @@ REDIRECT_URI = "https://spedatox.streamlit.app"  # Your Streamlit app URL
 # OpenAI API key
 openai.api_key = 'YOUR_OPENAI_API_KEY'  # Replace with your actual OpenAI API key
 
+# Dummy user database with hashed passwords (replace this with a secure database in production)
+USER_DATABASE = {
+    "user1": hashlib.sha256("password1".encode()).hexdigest(),
+    "user2": hashlib.sha256("password2".encode()).hexdigest(),
+}
+
 # User-based token file
 def get_token(username):
     return f"{username}_token.json"
@@ -38,8 +44,9 @@ def save_credentials(creds, username):
 
 def authenticate(username, password):
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
-    # Dummy password verification (replace this with actual password verification logic)
-    if hashed_password != 'EXPECTED_HASHED_PASSWORD':
+    
+    # Check if the username exists and the password matches
+    if username not in USER_DATABASE or USER_DATABASE[username] != hashed_password:
         st.sidebar.error("Invalid username or password.")
         return None, None
 
@@ -150,7 +157,7 @@ def generate_response(user_input, kullanici_adi, messages):
     if not user_input:
         return "No user input provided."
 
-    content = f"Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirisn. Kullanıcı adı {kullanici_adi}"
+    content = f"Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirsin. Kullanıcı Adı {kullanici_adi}"
     prompt = f"{content}\n\n{user_input}"
 
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))

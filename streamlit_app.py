@@ -24,6 +24,11 @@ USER_DATABASE = {
     "user2": hashlib.sha256("password2".encode()).hexdigest(),
 }
 
+def save_user(username, password):
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()
+    USER_DATABASE[username] = hashed_password
+    # Save USER_DATABASE to a file or database (this example does not persist data)
+
 # User-based token file
 def get_token(username):
     return f"{username}_token.json"
@@ -44,10 +49,17 @@ def save_credentials(creds, username):
 
 def authenticate(username, password):
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
-    
-    # Check if the username exists and the password matches
-    if username not in USER_DATABASE or USER_DATABASE[username] != hashed_password:
-        st.sidebar.error("Invalid username or password.")
+
+    # Check if username exists
+    if username not in USER_DATABASE:
+        # Save new user
+        save_user(username, password)
+        st.sidebar.success("Yeni kullanıcı kaydedildi. Lütfen tekrar giriş yapın.")
+        return None, None
+
+    # Check if the password matches
+    if USER_DATABASE[username] != hashed_password:
+        st.sidebar.error("Geçersiz kullanıcı adı veya şifre.")
         return None, None
 
     creds = load_credentials(username)
@@ -157,7 +169,7 @@ def generate_response(user_input, kullanici_adi, messages):
     if not user_input:
         return "No user input provided."
 
-    content = f"Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirsin. Kullanıcı Adı {kullanici_adi}"
+    content = f"Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirsin kullanıcı adı {kullanici_adi}."
     prompt = f"{content}\n\n{user_input}"
 
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -205,7 +217,7 @@ def main():
                 except Exception as e:
                     st.error(f"Etkinlikler listelenirken bir hata oluştu: {e}")
             elif "ekle" in user_input.lower():
-                st.session_state.messages.append({"role": "assistant", "content": "Lütfen etkinlik bilgilerini girin:"})
+                st.session_state.messages.append({"role": "assistant", "content": "Lütfen etkinlik bilgilerini girin:")
                 with st.form("add_event_form_from_prompt"):
                     summary = st.text_input("Etkinlik Başlığı:")
                     start_date = st.date_input("Başlangıç Tarihi")

@@ -108,7 +108,7 @@ def summarize_events(events):
         f"{event['start'].get('dateTime', event['start'].get('date'))}: {event['summary']}"
         for event in events
     ])
-    prompt = f"Aşağıdaki etkinlikleri ilk önce okunaklı bir liste olarak (Örneğin: 1 Ocak 2000 - (ETKİNLİK ADI)) yazıp daha sonrasında kısa bir şekilde özetle, esprili olabilirsin, {event_descriptions}"
+    prompt = f"Aşağıdaki etkinlikleri ilk önce okunaklı bir liste olarak (Örneğin: 1 Ocak 2000 - (ETKİNLİK ADI)) yazıp daha sonrasında kısa bir şekilde özetle, esprili olabilirsin, {even[...]
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -129,7 +129,7 @@ def generate_response(user_input, user_name):
     if not user_input:
         return "No user input provided."
 
-    content = f"Adın Speda Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirsin. Kullanıcının Adı:{user_name}"
+    content = f"Adın Speda Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirsin. Kullanıcının adı {user_name}"
     prompt = f"{content}\n\n{user_input}"
 
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -187,6 +187,8 @@ def main():
                             st.session_state.show_event_form = False
                         except Exception as e:
                             st.error(f"Etkinlik eklenirken bir hata oluştu: {e}")
+                    else:
+                        st.session_state.show_event_form = True
 
             elif "liste" in user_input.lower():
                 try:

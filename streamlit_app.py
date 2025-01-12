@@ -129,7 +129,7 @@ def generate_response(user_input, user_name):
     if not user_input:
         return "No user input provided."
 
-    content = f"Adın Speda Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirsin. Kullanıcının adı {user_name}"
+    content = f"Adın Speda Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirsin"
     prompt = f"{content}\n\n{user_input}"
 
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -180,11 +180,14 @@ def main():
                     end_time = st.time_input("Bitiş Saati")
                     if st.button("Etkinliği Ekle"):
                         try:
-                            start_datetime = datetime.combine(start_date, start_time).isoformat()
-                            end_datetime = datetime.combine(end_date, end_time).isoformat()
-                            event = add_event(service, summary, start_datetime, end_datetime)
-                            st.success(f"Etkinlik başarıyla eklendi: [Etkinliğe Git]({event.get('htmlLink')})")
-                            st.session_state.show_event_form = False
+                            if summary and start_date and start_time and end_date and end_time:
+                                start_datetime = datetime.combine(start_date, start_time).isoformat()
+                                end_datetime = datetime.combine(end_date, end_time).isoformat()
+                                event = add_event(service, summary, start_datetime, end_datetime)
+                                st.success(f"Etkinlik başarıyla eklendi: [Etkinliğe Git]({event.get('htmlLink')})")
+                                st.session_state.show_event_form = False
+                            else:
+                                st.error("Tüm alanları doldurduğunuzdan emin olun.")
                         except Exception as e:
                             st.error(f"Etkinlik eklenirken bir hata oluştu: {e}")
                     else:

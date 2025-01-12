@@ -195,6 +195,8 @@ def main():
     if 'messages' not in st.session_state:
         st.session_state.messages = []
 
+    creds, kullanici_adi = None, None  # Initialize variables
+
     with st.sidebar:
         st.header("Kullanıcı Girişi")
         username = st.text_input("Lütfen kullanıcı adınızı girin:")
@@ -203,8 +205,6 @@ def main():
             if username and password:
                 creds, kullanici_adi = authenticate(username, password)
                 st.session_state.kullanici_adi = kullanici_adi  # Store the Google user name in session state
-            else:
-                creds, kullanici_adi = None, None
 
     if creds:
         service = get_calendar_service(creds)

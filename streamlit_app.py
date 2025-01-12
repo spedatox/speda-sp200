@@ -88,12 +88,10 @@ def authenticate(username, password):
         st.sidebar.info("The app will log in automatically after authorization.")
 
         # Check the URL parameters when the OAuth flow is completed
-        query_params = st.query_params
+        query_params = st.query_params()
         if 'code' in query_params:
             try:
-                code = query_params['code'][0]
-                st.write(f"Received authorization code: {code}")  # Log the received authorization code
-                flow.fetch_token(code=code)
+                flow.fetch_token(code=query_params['code'][0])
                 creds = flow.credentials
                 save_credentials(creds, username)
                 kullanici_adi = get_google_user_name(creds)
@@ -102,12 +100,9 @@ def authenticate(username, password):
                 return creds, kullanici_adi
             except Exception as e:
                 st.sidebar.error(f"Error during authorization: {e}")
-                st.write(f"Authorization error details: {e}")  # Log the error details
         elif 'error' in query_params:
             st.sidebar.error(f"Error during authorization: {query_params['error'][0]}")
-            st.write(f"Authorization error: {query_params['error'][0]}")  # Log the error details
     return None, None
-
 
 def get_google_user_name(creds):
     if not creds or not creds.valid:
@@ -206,9 +201,6 @@ def main():
     if 'kullanici_adi' not in st.session_state:
         st.session_state.kullanici_adi = None
 
-    if 'show_form' not in st.session_state:
-        st.session_state.show_form = False
-
     with st.sidebar:
         st.header("Kullanıcı Girişi")
         username = st.text_input("Lütfen kullanıcı adınızı girin:")
@@ -243,7 +235,8 @@ def main():
                 try:
                     events = list_events(service, selected_calendar_id)
                     if not events:
-                        st.session_state.messages.append({"role": "assistant", "content": "Yakın zamanda hiçbir etkinlik bulunamadı."})
+                        with st.chat_message("assistant"):
+                            st.write("Yakın zamanda hiçbir etkinlik bulunamadı.")
                     else:
                         response = summarize_events(events)
                         st.session_state.messages.append({"role": "assistant", "content": "### Mevcut Etkinlikler\n" + response})
@@ -251,19 +244,12 @@ def main():
                     st.error(f"Etkinlikler listelenirken bir hata oluştu: {e}")
             elif "ekle" in user_input.lower():
                 st.session_state.messages.append({"role": "assistant", "content": "Lütfen etkinlik bilgilerini girin:"})
-                st.session_state.show_form = True
-
-        # Mesajları chat mesaj balonu içinde görüntüle
-        for message in st.session_state.messages:
-            if message["role"] == "user":
-                with st.chat_message("user"):
-                    st.write(message['content'])
-            else:
                 with st.chat_message("assistant"):
-                    st.write(message['content'])
-                    # Etkinlik formunu burada görüntüleyin
-                    if st.session_state.show_form and message["content"] == "Lütfen etkinlik bilgilerini girin:":
-                        with st.form("add_event_form_from_prompt", clear_on_submit=False):
+                    if 'show_form' not in st.session_state:
+                        st.session_state.show_form = True
+
+                    if st.session_state.show_form:
+                        with st.form("add_event_form_from_prompt"):
                             summary = st.text_input("Etkinlik Başlığı:")
                             start_date = st.date_input("Başlangıç Tarihi")
                             start_time = st.time_input("Başlangıç Saati")
@@ -280,9 +266,22 @@ def main():
                                         end_datetime = datetime.combine(end_date, end_time).isoformat()
                                         event = add_event(service, selected_calendar_id, summary, start_datetime, end_datetime)
                                         st.session_state.messages.append({"role": "assistant", "content": f"Etkinlik başarıyla eklendi: [Etkinliğe Git]({event.get('htmlLink')})"})
-                                        st.session_state.show_form = False  # Formu kapat
                                 except Exception as e:
                                     st.error(f"Etkinlik eklenirken bir hata oluştu: {e}")
+            else:
+                messages = [{"role": message["role"], "content": message["content"]} for message in st.session_state.messages]
+                response = generate_response(user_input, kullanici_adi, messages)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+
+    # Mesajları chat mesaj balonu içinde görüntüle
+    for message in st.session_state.messages:
+        if message["role"] == "user":
+            with st.chat_message("user"):
+                st.write(message['content'])
+        else:
+            with st.chat_message("assistant"):
+                st.write(message['content'])
+
 
 if __name__ == '__main__':
     main()

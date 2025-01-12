@@ -187,6 +187,7 @@ def generate_response(user_input, kullanici_adi, messages):
             model="gpt-4o-mini",
             messages=all_messages
         )
+        print(f"OpenAI response: {response}")
         return response.choices[0].message.content.strip()
     except Exception as e:
         print(f"Error invoking OpenAI API: {e}")

@@ -177,7 +177,7 @@ def generate_response(user_input, kullanici_adi, messages):
     if not user_input:
         return "No user input provided."
 
-    content = f"Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilir."
+    content = f"Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilisin kullanıcının adı:{kullanici_adi}"
     prompt = f"{content}\n\n{user_input}"
 
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -199,11 +199,12 @@ def main():
         st.header("Kullanıcı Girişi")
         username = st.text_input("Lütfen kullanıcı adınızı girin:")
         password = st.text_input("Lütfen şifrenizi girin:", type="password")
-        if username and password:
-            creds, kullanici_adi = authenticate(username, password)
-            st.session_state.kullanici_adi = kullanici_adi  # Store the Google user name in session state
-        else:
-            creds, kullanici_adi = None, None
+        if st.button("Giriş Yap"):
+            if username and password:
+                creds, kullanici_adi = authenticate(username, password)
+                st.session_state.kullanici_adi = kullanici_adi  # Store the Google user name in session state
+            else:
+                creds, kullanici_adi = None, None
 
     if creds:
         service = get_calendar_service(creds)

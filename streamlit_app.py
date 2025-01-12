@@ -217,7 +217,7 @@ def main():
                 except Exception as e:
                     st.error(f"Etkinlikler listelenirken bir hata oluştu: {e}")
             elif "ekle" in user_input.lower():
-                st.session_state.messages.append({"role": "assistant", "content": "Lütfen etkinlik bilgilerini girin:")
+                st.session_state.messages.append({"role": "assistant", "content": "Lütfen etkinlik bilgilerini girin:"})
                 with st.form("add_event_form_from_prompt"):
                     summary = st.text_input("Etkinlik Başlığı:")
                     start_date = st.date_input("Başlangıç Tarihi")

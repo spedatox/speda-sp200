@@ -185,19 +185,25 @@ def main():
             st.session_state.messages.append({"role": "user", "content": user_input})
 
             if "liste" in user_input.lower():
-                try:
-                    events = list_events(service)
-                    if not events:
-                        st.info("Yakın zamanda hiçbir etkinlik bulunamadı.")
-                    else:
-                        st.subheader("Mevcut Etkinlikler")
-                        response = summarize_events(events)
-                        st.session_state.messages.append({"role": "assistant", "content": response})
-                except Exception as e:
-                    st.error(f"Etkinlikler listelenirken bir hata oluştu: {e}")
-            else:
-                response = generate_response(user_input, username)
-                st.session_state.messages.append({"role": "assistant", "content": response})
+    try:
+        events = list_events(service)
+        if not events:
+            with st.chat_message("assistant"):
+                st.write("Yakın zamanda hiçbir etkinlik bulunamadı.")
+        else:
+            response = summarize_events(events)
+            with st.chat_message("assistant"):
+                st.write("### Mevcut Etkinlikler")  # Subheader yerine chat balonunda başlık
+                st.write(response)  # Etkinlik listesini mesaj balonunda göster
+            st.session_state.messages.append({"role": "assistant", "content": response})
+    except Exception as e:
+        st.error(f"Etkinlikler listelenirken bir hata oluştu: {e}")
+else:
+    response = generate_response(user_input, username)
+    with st.chat_message("assistant"):
+        st.write(response)
+    st.session_state.messages.append({"role": "assistant", "content": response})
+
 
     # Mesajları göster
     for message in st.session_state.messages:

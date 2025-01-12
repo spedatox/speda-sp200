@@ -18,16 +18,22 @@ REDIRECT_URI = "https://spedatox.streamlit.app"  # Your Streamlit app URL
 # OpenAI API key
 openai.api_key = 'YOUR_OPENAI_API_KEY'  # Replace with your actual OpenAI API key
 
-# Dummy user database with hashed passwords (replace this with a secure database in production)
-USER_DATABASE = {
-    "user1": hashlib.sha256("password1".encode()).hexdigest(),
-    "user2": hashlib.sha256("password2".encode()).hexdigest(),
-}
+# Load user database from file
+USER_DATABASE_FILE = 'user_database.json'
+if os.path.exists(USER_DATABASE_FILE):
+    with open(USER_DATABASE_FILE, 'r') as f:
+        USER_DATABASE = json.load(f)
+else:
+    USER_DATABASE = {}
+
+def save_user_database():
+    with open(USER_DATABASE_FILE, 'w') as f:
+        json.dump(USER_DATABASE, f)
 
 def save_user(username, password):
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
     USER_DATABASE[username] = hashed_password
-    # Save USER_DATABASE to a file or database (this example does not persist data)
+    save_user_database()
 
 # User-based token file
 def get_token(username):
@@ -54,11 +60,8 @@ def authenticate(username, password):
     if username not in USER_DATABASE:
         # Save new user
         save_user(username, password)
-        st.sidebar.success("Yeni kullanıcı kaydedildi. Lütfen tekrar giriş yapın.")
-        return None, None
-
-    # Check if the password matches
-    if USER_DATABASE[username] != hashed_password:
+        st.sidebar.success("Yeni kullanıcı kaydedildi ve giriş yapıldı.")
+    elif USER_DATABASE[username] != hashed_password:
         st.sidebar.error("Geçersiz kullanıcı adı veya şifre.")
         return None, None
 
@@ -169,7 +172,7 @@ def generate_response(user_input, kullanici_adi, messages):
     if not user_input:
         return "No user input provided."
 
-    content = f"Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirsin kullanıcı adı {kullanici_adi}."
+    content = f"Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği neredeyse herşeyi yapabilirisn"
     prompt = f"{content}\n\n{user_input}"
 
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))

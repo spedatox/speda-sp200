@@ -76,6 +76,9 @@ def authenticate(username):
     return None
 
 def get_google_user_name(creds):
+    if not creds or not creds.valid:
+        raise ValueError("Invalid credentials")
+        
     service = build('oauth2', 'v2', credentials=creds)
     user_info = service.userinfo().get().execute()
     return user_info['name']

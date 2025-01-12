@@ -88,7 +88,7 @@ def authenticate(username, password):
         st.sidebar.info("The app will log in automatically after authorization.")
 
         # Check the URL parameters when the OAuth flow is completed
-        query_params = st.query_params()
+        query_params = st.query_params  # Accessing as a property, not a method
         if 'code' in query_params:
             try:
                 flow.fetch_token(code=query_params['code'][0])

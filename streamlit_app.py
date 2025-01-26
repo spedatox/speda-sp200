@@ -120,7 +120,7 @@ def list_events(service, calendar_id):
     one_month_later = (datetime.utcnow() + timedelta(days=30)).isoformat() + 'Z'
 
     st.write(f"🔍 Etkinlikler aranıyor: {one_week_ago} - {one_month_later}")
-    
+
     events_result = service.events().list(
         calendarId=calendar_id,
         timeMin=one_week_ago,
@@ -129,10 +129,10 @@ def list_events(service, calendar_id):
         singleEvents=True,
         orderBy='startTime'
     ).execute()
-    
+
     st.write("🔍 Ham Google Takvim Yanıtı:")
     st.json(events_result)  # Debug
-    
+
     return events_result.get('items', [])
 
 def add_event(service, calendar_id, summary, start_time, end_time):
@@ -153,27 +153,30 @@ def summarize_events(events):
         f"{event['start'].get('dateTime', event['start'].get('date'))}: {event['summary']}"
         for event in events
     ])
-    
+
     st.write("📝 Oluşturulan Prompt:")
     st.code(event_descriptions)  # Debug
-    
+
     prompt = f"Aşağıdaki etkinlikleri tarih sırasına göre listeleyip özetle:\n\n{event_descriptions}"
 
     try:
         st.write("🔌 OpenAI API'sine bağlanılıyor...")
         client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-        
-        response = client.chat.completions.create(
+
+        response = client.chat_completions.create(
             model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt}
+            ],
             timeout=20
         )
-        
+
         st.write("✅ API Yanıtı Alındı!")
-        st.json(response.model_dump())  # Debug
-        
-        return response.choices[0].message.content.strip()
-        
+        st.json(response)  # Debug
+
+        return response.choices[0].message["content"].strip()
+
     except openai.AuthenticationError as e:
         st.error(f"🔒 Kimlik Doğrulama Hatası: {e}")
     except openai.APITimeoutError as e:
@@ -182,7 +185,7 @@ def summarize_events(events):
         st.error(f"🚨 API Hatası [HTTP {e.status_code}]: {e.message}")
     except Exception as e:
         st.error(f"❌ Beklenmeyen Hata: {str(e)}")
-    
+
     return None
 
 # Ana Uygulama
@@ -261,7 +264,7 @@ def main():
                         start_time = st.time_input("Başlangıç Saati*", key="start_time")
                         end_date = st.date_input("Bitiş Tarihi*", key="end_date")
                         end_time = st.time_input("Bitiş Saati*", key="end_time")
-                        
+
                         if st.form_submit_button("Etkinliği Ekle"):
                             if not summary:
                                 st.error("Etkinlik adı zorunlu!")

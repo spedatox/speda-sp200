@@ -170,12 +170,16 @@ def summarize_events(events):
         f"ETKİNLİK ADI) yazıp daha sonrasında kısa bir şekilde özetle:\n\n{event_descriptions}"
     )
 
-    client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])  # Use API key from secrets.toml
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",  # Use a valid model name
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return response.choices[0].message.content.strip()
+    try:
+        client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])  # Use API key from secrets.toml
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",  # Use the new model
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        st.error(f"OpenAI API hatası: {e}")
+        return None
 
 def main():
     """Main function to run the Streamlit application."""
@@ -232,9 +236,10 @@ def main():
                         )
                     else:
                         response = summarize_events(events)
-                        st.session_state.messages.append(
-                            {"role": "assistant", "content": "### Mevcut Etkinlikler\n" + response}
-                        )
+                        if response:
+                            st.session_state.messages.append(
+                                {"role": "assistant", "content": "### Mevcut Etkinlikler\n" + response}
+                            )
                 except Exception as e:
                     st.error(f"Etkinlikler listelenirken bir hata oluştu: {e}")
 

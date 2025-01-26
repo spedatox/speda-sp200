@@ -12,7 +12,7 @@ from googleapiclient.discovery import build
 # Google Calendar API settings
 SCOPES = ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/userinfo.profile']
 CLIENT_SECRETS_FILE = "credentials.json"
-REDIRECT_URI = "https://spedatox.streamlit.app"  # Replace with your Streamlit app URL
+REDIRECT_URI = "https://spedatox.streamlit.app/"  # Replace with your Streamlit app URL
 
 # OpenAI API Key
 openai.api_key = 'YOUR_OPENAI_API_KEY'  # Replace with your actual OpenAI API key

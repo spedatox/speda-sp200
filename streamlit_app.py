@@ -14,8 +14,8 @@ SCOPES = ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.co
 CLIENT_SECRETS_FILE = "credentials.json"
 REDIRECT_URI = "https://spedatox.streamlit.app"  # Streamlit app URL
 
-# OpenAI API Key
-openai.api_key = 'YOUR_OPENAI_API_KEY'  # Replace with your actual OpenAI API key
+# OpenAI API Key from secrets.toml
+openai.api_key = st.secrets["OPENAI_API_KEY"]  # Read OpenAI API key from secrets.toml
 
 # Path to the user database file
 USER_DATABASE_FILE = 'user_database.json'
@@ -170,9 +170,9 @@ def summarize_events(events):
         f"ETKİNLİK ADI) yazıp daha sonrasında kısa bir şekilde özetle:\n\n{event_descriptions}"
     )
 
-    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])  # Use API key from secrets.toml
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-4o-mini",  # Use a valid model name
         messages=[{"role": "user", "content": prompt}]
     )
     return response.choices[0].message.content.strip()

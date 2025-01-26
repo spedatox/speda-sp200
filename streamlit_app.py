@@ -12,7 +12,7 @@ from googleapiclient.discovery import build
 # Google Calendar API settings
 SCOPES = ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/userinfo.profile']
 CLIENT_SECRETS_FILE = "credentials.json"
-REDIRECT_URI = "https://spedatox.streamlit.app"  # Replace with your Streamlit app URL
+REDIRECT_URI = "https://spedatox.streamlit.app"  # Streamlit app URL
 
 # OpenAI API Key
 openai.api_key = 'YOUR_OPENAI_API_KEY'  # Replace with your actual OpenAI API key
@@ -26,30 +26,22 @@ else:
     USER_DATABASE = {}
 
 def save_user_database():
-    """
-    Save the current user database to the JSON file.
-    """
+    """Save the current user database to the JSON file."""
     with open(USER_DATABASE_FILE, 'w') as f:
         json.dump(USER_DATABASE, f)
 
 def save_user(username, password):
-    """
-    Register a new user by storing their hashed password in the user database.
-    """
+    """Register a new user by storing their hashed password in the user database."""
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
     USER_DATABASE[username] = hashed_password
     save_user_database()
 
 def get_token(username):
-    """
-    Construct the token filename for the given username.
-    """
+    """Construct the token filename for the given username."""
     return f"{username}_token.json"
 
 def load_credentials(username):
-    """
-    Load user credentials from a token file.
-    """
+    """Load user credentials from a token file."""
     token_file = get_token(username)
     creds = None
     if os.path.exists(token_file):
@@ -59,17 +51,13 @@ def load_credentials(username):
     return creds
 
 def save_credentials(creds, username):
-    """
-    Save the authorized user credentials to the token file.
-    """
+    """Save the authorized user credentials to the token file."""
     token_file = get_token(username)
     with open(token_file, 'w') as token:
         token.write(creds.to_json())
 
 def get_google_user_name(creds):
-    """
-    Retrieve the user's Google account name from their credentials.
-    """
+    """Retrieve the user's Google account name from their credentials."""
     if not creds or not creds.valid:
         raise ValueError("Invalid credentials")
     service = build('oauth2', 'v2', credentials=creds)
@@ -77,9 +65,7 @@ def get_google_user_name(creds):
     return user_info['name']
 
 def authenticate(username, password):
-    """
-    Authenticate or register a user, and return valid Google credentials.
-    """
+    """Authenticate or register a user, and return valid Google credentials."""
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
 
     # If username doesn't exist, register a new user
@@ -112,16 +98,17 @@ def authenticate(username, password):
         st.sidebar.markdown(f"Click [here]({auth_url}) to log in with your Google account")
         st.sidebar.info("The app will log in automatically after authorization.")
 
-       # Check the URL parameters when the OAuth flow is completed
-        query_params = st.query_params
+        # Check the URL parameters when the OAuth flow is completed
+        query_params = st.experimental_get_query_params()
         if 'code' in query_params:
             try:
-                flow.fetch_token(code=query_params['code'][0])
+                auth_code = query_params['code'][0]
+                flow.fetch_token(code=auth_code)
                 creds = flow.credentials
                 save_credentials(creds, username)
                 kullanici_adi = get_google_user_name(creds)
                 st.sidebar.success(f"Hoşgeldin {kullanici_adi}!")
-                st.experimental_set_query_params()  # Clear query parameters to simulate a rerun
+                st.experimental_set_query_params()  # Clear query parameters
                 return creds, kullanici_adi
             except Exception as e:
                 st.sidebar.error(f"Error during authorization: {e}")
@@ -131,23 +118,17 @@ def authenticate(username, password):
     return None, None
 
 def get_calendar_service(creds):
-    """
-    Build and return the Google Calendar service object.
-    """
+    """Build and return the Google Calendar service object."""
     return build('calendar', 'v3', credentials=creds)
 
 def get_calendar_list(creds):
-    """
-    Retrieve a list of calendars accessible by the authenticated user.
-    """
+    """Retrieve a list of calendars accessible by the authenticated user."""
     service = get_calendar_service(creds)
     calendar_list = service.calendarList().list().execute()
     return calendar_list.get('items', [])
 
 def list_events(service, calendar_id):
-    """
-    List events within a specific time range for the given calendar.
-    """
+    """List events within a specific time range for the given calendar."""
     now = datetime.utcnow().isoformat() + 'Z'
     one_week_ago = (datetime.utcnow() - timedelta(days=7)).isoformat() + 'Z'
     one_month_later = (datetime.utcnow() + timedelta(days=30)).isoformat() + 'Z'
@@ -163,9 +144,7 @@ def list_events(service, calendar_id):
     return events_result.get('items', [])
 
 def add_event(service, calendar_id, summary, start_time, end_time):
-    """
-    Create an event on the specified calendar with the given details.
-    """
+    """Create an event on the specified calendar with the given details."""
     event_body = {
         'summary': summary,
         'start': {
@@ -181,9 +160,7 @@ def add_event(service, calendar_id, summary, start_time, end_time):
     return event
 
 def summarize_events(events):
-    """
-    Summarize a list of events using an OpenAI prompt.
-    """
+    """Summarize a list of events using an OpenAI prompt."""
     event_descriptions = "\n".join([
         f"{event['start'].get('dateTime', event['start'].get('date'))}: {event['summary']}"
         for event in events
@@ -195,72 +172,28 @@ def summarize_events(events):
 
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return response.choices[0].message.content.strip()
-
-def convert_time_to_iso_format(time_str):
-    """
-    Convert a given time string to ISO 8601 format using OpenAI.
-    """
-    prompt = f"Convert the following time '{time_str}' to ISO 8601 format."
-    response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[{"role": "user", "content": prompt}]
     )
     return response.choices[0].message.content.strip()
 
-def generate_response(user_input, kullanici_adi, messages):
-    """
-    Generate a chatbot response using a custom conversation prompt.
-    """
-    if not user_input:
-        return "No user input provided."
-
-    content = (
-        "Senin adın Speda. Ahmet Erol Bayrak Tarafından Geliştirilen Bir Yapay Zekasın. "
-        "Kod yazabilir, metin oluşturabilir, bir yapay zeka asistanının yapabildiği "
-        "neredeyse herşeyi yap[...]"
-    )
-    prompt = f"{content}\n\n{user_input}"
-
-    try:
-        client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        all_messages = messages + [{"role": "user", "content": prompt}]
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=all_messages
-        )
-        print(f"OpenAI response: {response}")
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        print(f"Error invoking OpenAI API: {e}")
-        return "An error occurred while generating the response."
-
 def main():
-    """
-    Main function to run the Streamlit application.
-    """
+    """Main function to run the Streamlit application."""
     st.title("Speda Takvim Asistanı")
     st.caption("Google Takvimi entegre eden Chatbot")
 
     # Initialize session states
     if 'messages' not in st.session_state:
         st.session_state.messages = []
-        print("Initialized session state messages")
 
     if 'creds' not in st.session_state:
         st.session_state.creds = None
-        print("Initialized session state creds")
 
     if 'kullanici_adi' not in st.session_state:
         st.session_state.kullanici_adi = None
-        print("Initialized session state kullanici_adi")
 
     if 'show_form' not in st.session_state:
         st.session_state.show_form = False
-        print("Initialized session state show_form")
 
     # Sidebar for user login
     with st.sidebar:
@@ -272,7 +205,6 @@ def main():
                 creds, kullanici_adi = authenticate(username, password)
                 st.session_state.creds = creds
                 st.session_state.kullanici_adi = kullanici_adi
-                print(f"Authenticated user: {kullanici_adi}")
 
     creds = st.session_state.creds
     kullanici_adi = st.session_state.kullanici_adi
@@ -280,22 +212,15 @@ def main():
     # If credentials are valid, proceed with calendar operations
     if creds:
         service = get_calendar_service(creds)
-        print("Obtained Google Calendar service")
-
         calendar_list = get_calendar_list(creds)
         calendar_ids = {cal['summary']: cal['id'] for cal in calendar_list}
         selected_calendar = st.sidebar.selectbox("Takvim Seçin:", list(calendar_ids.keys()))
-        print(f"Selected calendar: {selected_calendar}")
-
         selected_calendar_id = calendar_ids[selected_calendar] if selected_calendar else 'primary'
-        if not selected_calendar:
-            print("Defaulting to primary calendar")
 
         # Chat input
         user_input = st.chat_input("Ne yapmak istiyorsunuz?")
         if user_input:
             st.session_state.messages.append({"role": "user", "content": user_input})
-            print(f"User input: {user_input}")
 
             # List events
             if "liste" in user_input.lower():
@@ -310,10 +235,8 @@ def main():
                         st.session_state.messages.append(
                             {"role": "assistant", "content": "### Mevcut Etkinlikler\n" + response}
                         )
-                    print("Listed events")
                 except Exception as e:
                     st.error(f"Etkinlikler listelenirken bir hata oluştu: {e}")
-                    print(f"Error listing events: {e}")
 
             # Add event
             elif "ekle" in user_input.lower():
@@ -321,7 +244,6 @@ def main():
                     {"role": "assistant", "content": "Lütfen etkinlik bilgilerini girin:"}
                 )
                 st.session_state.show_form = True
-                print("Prompting user to enter event details")
 
         # Display conversation and process form submission
         for message in st.session_state.messages:
@@ -359,10 +281,8 @@ def main():
                                             "content": f"Etkinlik başarıyla eklendi: [Etkinliğe Git]({event.get('htmlLink')})"
                                         })
                                         st.session_state.show_form = False
-                                        print("Event added successfully")
                                 except Exception as e:
                                     st.error(f"Etkinlik eklenirken bir hata oluştu: {e}")
-                                    print(f"Error adding event: {e}")
 
 if __name__ == '__main__':
     main()
